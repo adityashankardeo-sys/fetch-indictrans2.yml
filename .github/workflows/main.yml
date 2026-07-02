@@ -18,7 +18,7 @@ on:
 
         options:
 
-          - "ai4bharat/indictrans2-en-indic-dist-200M"
+          - "ai4bharat/indictrans2-en-indic-dist-1B"
 
           - "ai4bharat/indictrans2-en-indic-1B"
 
