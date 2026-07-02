@@ -1,0 +1,106 @@
+name: Fetch IndicTrans2 model
+
+on:
+
+  workflow_dispatch:
+
+    inputs:
+
+      model:
+
+        description: "HuggingFace model id"
+
+        required: true
+
+        default: "ai4bharat/indictrans2-en-indic-dist-200M"
+
+        type: choice
+
+        options:
+
+          - "ai4bharat/indictrans2-en-indic-dist-200M"
+
+          - "ai4bharat/indictrans2-en-indic-1B"
+
+permissions:
+
+  contents: write
+
+jobs:
+
+  fetch:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Set up Python
+
+        uses: actions/setup-python@v5
+
+        with:
+
+          python-version: "3.12"
+
+      - name: Install downloader
+
+        run: pip install "huggingface_hub>=0.23"
+
+      - name: Download model snapshot
+
+        run: |
+
+          python - <<'PY'
+
+          import os
+
+          from huggingface_hub import snapshot_download
+
+          mid = os.environ["MODEL_ID"]
+
+          snapshot_download(repo_id=mid, local_dir="indictrans2-model",
+
+                            local_dir_use_symlinks=False)
+
+          print("downloaded:", mid)
+
+          PY
+
+        env:
+
+          MODEL_ID: ${{ github.event.inputs.model }}
+
+      - name: Tar and split into under-2GB parts
+
+        run: |
+
+          tar -cf indictrans2-model.tar indictrans2-model
+
+          split -b 1900m -d indictrans2-model.tar indictrans2.tar.part
+
+          ls -lh indictrans2.tar.part*
+
+          sha256sum indictrans2.tar.part* > indictrans2.sha256.txt
+
+      - name: Publish as Release assets
+
+        uses: softprops/action-gh-release@v2
+
+        with:
+
+          tag_name: indictrans2-v1
+
+          name: IndicTrans2 model (split)
+
+          body: |
+
+            IndicTrans2 weights for offline use, split into under-2GB parts.
+
+            Download every part plus the .sha256.txt, then reassemble locally.
+
+          files: |
+
+            indictrans2.tar.part*
+
+            indictrans2.sha256.txt
+ 
